@@ -364,7 +364,7 @@ class InteractiveUI:
             # here; we've already inserted/replaced it above)
             before_match = display_line[:coloured_match_start]
             after_matched = display_line[coloured_match_end:]
-            highlighted = f"{AnsiStyles.RESET}{self.config.highlight_colour}{plain_matched_part}{AnsiStyles.RESET}"
+            highlighted = f"\033[22m{self.config.highlight_colour}{plain_matched_part}{AnsiStyles.RESET}"
             display_line = before_match + highlighted + after_matched
 
         return display_line
