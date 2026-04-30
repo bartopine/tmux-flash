@@ -643,6 +643,36 @@ class InteractiveUI:
         """
         logger = DebugLogger.get_instance()
 
+        # TEMP DEBUG: write context about the match to /tmp/tmux-flash-debug.txt
+        try:
+            import pathlib, datetime
+            si_lines = self.search_interface.lines
+            ctx = []
+            if match is not None:
+                ml = match.line
+                for offset in (-2, -1, 0, 1, 2):
+                    idx = ml + offset
+                    if 0 <= idx < len(si_lines):
+                        marker = " <-- match.line" if offset == 0 else ""
+                        ctx.append(f"  si.lines[{idx}]={si_lines[idx]!r}{marker}")
+            mtext = repr(match.text) if match else "None"
+            mline = match.line if match else None
+            mcol = match.col if match else None
+            first5 = "\n".join(f"  [{i}]={si_lines[i]!r}" for i in range(min(5, len(si_lines))))
+            pathlib.Path("/tmp/tmux-flash-debug.txt").write_text(
+                f"[{datetime.datetime.now().isoformat()}]\n"
+                f"pane_id={self.pane_id}\n"
+                f"match.text={mtext}\n"
+                f"match.line={mline}\n"
+                f"match.col={mcol}\n"
+                f"len(si.lines)={len(si_lines)}\n"
+                f"context around match.line:\n" + "\n".join(ctx) + "\n"
+                f"first 5 si.lines:\n" + first5 + "\n"
+            )
+            pathlib.Path("/tmp/tmux-flash-pane-content.txt").write_text(self.pane_content_plain)
+        except Exception:
+            pass
+
         # Store result in a tmux buffer for parent to read
         # Use pane-specific buffer name to avoid conflicts with concurrent instances
         result_buffer = f"__tmux_flash_result_{self.pane_id}__"
@@ -686,9 +716,9 @@ def main():
         "--prompt-placeholder-text", default="search...", help="Ghost text for empty prompt input"
     )
     parser.add_argument(
-        "--highlight-colour", default="\033[1;33m", help="ANSI colour for highlighted text"
+        "--highlight-colour", default="\033[48;5;208m\033[1m", help="ANSI colour for highlighted text"
     )
-    parser.add_argument("--label-colour", default="\033[1;32m", help="ANSI colour for labels")
+    parser.add_argument("--label-colour", default="\033[48;5;142m\033[1m", help="ANSI colour for labels")
     parser.add_argument(
         "--prompt-position", default="bottom", help="Position of prompt (top or bottom)"
     )
