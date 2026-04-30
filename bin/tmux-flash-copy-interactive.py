@@ -24,7 +24,6 @@ PLUGIN_DIR = Path(__file__).parent.parent
 sys.path.insert(0, str(PLUGIN_DIR))
 
 from src.ansi_utils import AnsiStyles, AnsiUtils, ControlChars, TerminalSequences  # noqa: E402
-from src.clipboard import Clipboard  # noqa: E402
 from src.config import ConfigLoader, FlashCopyConfig  # noqa: E402
 from src.debug_logger import DebugLogger  # noqa: E402
 from src.pane_capture import PaneCapture  # noqa: E402
@@ -69,7 +68,6 @@ class InteractiveUI:
             case_sensitive=config.case_sensitive,
             label_characters=config.label_characters,
         )
-        self.clipboard = Clipboard()
         self.search_query = ""
         self.current_matches = []
         self.autopaste_modifier_active = False
