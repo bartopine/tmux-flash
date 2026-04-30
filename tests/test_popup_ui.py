@@ -46,7 +46,7 @@ class TestPopupUIAutoPaste:
             result = MagicMock()
             result.returncode = 0
             if "show-buffer" in cmd:
-                result.stdout = "test result"
+                result.stdout = "3:7"
             else:
                 result.stdout = ""
             return result
@@ -123,7 +123,7 @@ class TestPopupUIAutoPaste:
             result = MagicMock()
             result.returncode = 0
             if "show-buffer" in cmd:
-                result.stdout = "test result"
+                result.stdout = "3:7"
             else:
                 result.stdout = ""
             return result
@@ -191,7 +191,7 @@ class TestPopupUIErrorHandling:
             if "display-message" in cmd:
                 result.stdout = "200,50"
             elif "show-buffer" in cmd:
-                result.stdout = "test result"
+                result.stdout = "3:7"
             else:
                 result.stdout = ""
             return result
@@ -243,7 +243,7 @@ class TestPopupUIErrorHandling:
             result = MagicMock()
             result.returncode = 0
             if "show-buffer" in cmd:
-                result.stdout = "test result"
+                result.stdout = "3:7"
             else:
                 result.stdout = ""
             return result
@@ -327,8 +327,8 @@ class TestPopupUIErrorHandling:
 
         result = popup_ui._launch_popup()
 
-        # Should return (None, False) when buffer read fails
-        assert result == (None, False)
+        # Should return None when buffer read fails
+        assert result is None
         # Should log the failure with pane-specific buffer name
         mock_logger.log.assert_any_call(
             "Buffer read FAILED: Command '['tmux', 'show-buffer', '-b', '__tmux_flash_copy_result_test_pane__']' returned non-zero exit status 1."
@@ -392,8 +392,8 @@ class TestPopupUIErrorHandling:
 
         result = popup_ui._launch_popup()
 
-        # Should return (None, False) when timeout occurs
-        assert result == (None, False)
+        # Should return None when timeout occurs
+        assert result is None
         # Should log the timeout
         mock_logger.log.assert_any_call("Popup timeout expired")
 
@@ -455,7 +455,7 @@ class TestPopupUIErrorHandling:
 
         result = popup_ui._launch_popup()
 
-        # Should return (None, False) when exception occurs
-        assert result == (None, False)
+        # Should return None when exception occurs
+        assert result is None
         # Should log the exception
         mock_logger.log.assert_any_call("Exception in _launch_popup: Unexpected error")

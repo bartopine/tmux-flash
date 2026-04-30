@@ -46,26 +46,26 @@ class PopupUI:
         self.search_query = ""
         self.current_matches: list[SearchMatch] = []
 
-    def run(self) -> tuple[Optional[str], bool]:
+    def run(self) -> Optional[tuple[int, int]]:
         """
         Run the interactive popup UI.
 
         Returns:
-            Tuple of (text, should_paste) where text is the copied text if selection
-            was made (None if cancelled) and should_paste is True if auto-paste is enabled
+            Optional[tuple[int, int]]: A (line, col) tuple for the jump target if a
+            selection was made, or None if cancelled.
         """
         # Launch the popup
         result = self._launch_popup()
 
         return result
 
-    def _launch_popup(self) -> tuple[Optional[str], bool]:
+    def _launch_popup(self) -> Optional[tuple[int, int]]:
         """
         Launch the tmux popup window.
 
         Returns:
-            Tuple of (text, should_paste) where text is the copied text if selection
-            was made (None if cancelled) and should_paste is True if auto-paste is enabled
+            Optional[tuple[int, int]]: A (line, col) tuple for the jump target if a
+            selection was made, or None if cancelled.
         """
         # Get pane dimensions for seamless overlay positioning
         pane_dimensions = TmuxPaneUtils.get_pane_dimensions(self.pane_id)
@@ -179,9 +179,6 @@ class PopupUI:
             if logger.enabled:
                 logger.log(f"Popup closed with exit code: {result.returncode}")
 
-            # Read paste flag from exit code: 10 = paste, 0 = copy
-            should_paste = result.returncode == 10
-
             # Read result from tmux buffer (written by child process)
             # Using pane-specific buffer names to avoid conflicts
             result_buffer = f"__tmux_flash_copy_result_{self.pane_id}__"
@@ -222,20 +219,24 @@ class PopupUI:
                     logger.log(f"Buffer read FAILED: {e}")
                 result_text = None
 
-            # Empty string means cancelled (ESC/Ctrl+C)
-            # None means no output or buffer not found
+            # Empty string means cancelled (ESC/Ctrl+C); None means buffer not found.
             if result_text is not None and result_text != "":
+                try:
+                    line_str, col_str = result_text.split(":", 1)
+                    line, col = int(line_str), int(col_str)
+                except (ValueError, AttributeError):
+                    if logger.enabled:
+                        logger.log(
+                            f"Malformed result buffer payload: {result_text!r}; treating as cancel"
+                        )
+                    return None
                 if logger.enabled:
-                    logger.log(
-                        f"Returning result to parent: '{result_text[:50]}...' (paste={should_paste})"
-                    )
-                # Return tuple of (text, should_paste)
-                return (result_text, should_paste)
+                    logger.log(f"Returning jump target line={line} col={col}")
+                return (line, col)
 
-            # Return tuple of (None, False) for cancelled or no output
             if logger.enabled:
                 logger.log("No result to return (cancelled or empty)")
-            return (None, False)
+            return None
 
         except subprocess.TimeoutExpired:
             if logger.enabled:
@@ -246,7 +247,7 @@ class PopupUI:
                 capture_output=True,
                 check=False,
             )
-            return (None, False)
+            return None
         except Exception as e:
             if logger.enabled:
                 logger.log(f"Exception in _launch_popup: {e}")
@@ -256,7 +257,7 @@ class PopupUI:
                 capture_output=True,
                 check=False,
             )
-            return (None, False)
+            return None
 
     def _save_match_position(self, match) -> None:
         """Write 'line:col' for the chosen match into the tmux result buffer.
