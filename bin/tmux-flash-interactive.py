@@ -391,7 +391,7 @@ class InteractiveUI:
 
             if not matches_on_line:
                 # Dim the line if there are search results but none on this line
-                output = self._dim_coloured_line(line) if self.search_query else line
+                output = self._dim_coloured_line(line)
 
                 # Skip newline on last line to prevent blank line before search bar
                 if is_last_line:
@@ -403,7 +403,7 @@ class InteractiveUI:
                 continue
 
             # For lines with matches, highlight the matched text and add labels
-            dimmed_line = self._dim_coloured_line(line) if self.search_query else line
+            dimmed_line = self._dim_coloured_line(line)
             # Pass the plain (ANSI-stripped) version of the line so we can inspect
             # plain characters (e.g. to detect a following space to overwrite).
             display_line = self._display_line_with_matches(dimmed_line, line_idx, line_plain)
@@ -716,9 +716,9 @@ def main():
         "--prompt-placeholder-text", default="search...", help="Ghost text for empty prompt input"
     )
     parser.add_argument(
-        "--highlight-colour", default="\033[48;5;208m\033[1m", help="ANSI colour for highlighted text"
+        "--highlight-colour", default="\033[48;2;120;40;15m", help="ANSI colour for highlighted text"
     )
-    parser.add_argument("--label-colour", default="\033[48;5;142m\033[1m", help="ANSI colour for labels")
+    parser.add_argument("--label-colour", default="\033[48;2;22;110;22m", help="ANSI colour for labels")
     parser.add_argument(
         "--prompt-position", default="bottom", help="Position of prompt (top or bottom)"
     )

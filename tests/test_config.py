@@ -15,8 +15,8 @@ class TestFlashConfig:
         assert config.smart_case == "on"
         assert config.word_separators is None
         assert config.prompt_placeholder_text == "search..."
-        assert config.highlight_colour == "\033[48;5;208m\033[1m"
-        assert config.label_colour == "\033[48;5;142m\033[1m"
+        assert config.highlight_colour == "\033[48;2;120;40;15m"
+        assert config.label_colour == "\033[48;2;22;110;22m"
         assert config.prompt_position == "bottom"
         assert config.prompt_indicator == ">"
         assert config.prompt_colour == "\033[1m"
@@ -580,8 +580,8 @@ class TestConfigLoader:
         mock_word_sep.return_value = None
         mock_string.side_effect = [
             "search...",
-            "\033[48;5;208m\033[1m",
-            "\033[48;5;142m\033[1m",
+            "\033[48;2;120;40;15m",
+            "\033[48;2;22;110;22m",
             ">",
             "\033[1m",
             "",
@@ -595,8 +595,8 @@ class TestConfigLoader:
         assert config.smart_case == "on"
         assert config.word_separators is None
         assert config.prompt_placeholder_text == "search..."
-        assert config.highlight_colour == "\033[48;5;208m\033[1m"
-        assert config.label_colour == "\033[48;5;142m\033[1m"
+        assert config.highlight_colour == "\033[48;2;120;40;15m"
+        assert config.label_colour == "\033[48;2;22;110;22m"
         assert config.prompt_position == "bottom"
         assert config.prompt_indicator == ">"
         assert config.prompt_colour == "\033[1m"
@@ -629,8 +629,8 @@ class TestConfigLoader:
         mock_word_sep.return_value = " -"
         mock_string.side_effect = [
             "search...",
-            "\033[48;5;208m\033[1m",
-            "\033[48;5;142m\033[1m",
+            "\033[48;2;120;40;15m",
+            "\033[48;2;22;110;22m",
             ">",
             "\033[1m",
             "",

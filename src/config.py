@@ -19,8 +19,8 @@ class FlashConfig:
     smart_case: str = "on"  # "on" (smart) | "case-sensitive" | "case-insensitive"
     word_separators: Optional[str] = None
     prompt_placeholder_text: str = "search..."
-    highlight_colour: str = "\033[48;5;208m\033[1m"
-    label_colour: str = "\033[48;5;142m\033[1m"
+    highlight_colour: str = "\033[48;2;120;40;15m"
+    label_colour: str = "\033[48;2;22;110;22m"
     prompt_position: str = "bottom"
     prompt_indicator: str = ">"
     prompt_colour: str = "\033[1m"
@@ -407,9 +407,9 @@ class ConfigLoader:
                 "@flash-prompt-placeholder-text", default="search..."
             ),
             highlight_colour=ConfigLoader.get_string(
-                "@flash-highlight-colour", default="\033[48;5;208m\033[1m"
+                "@flash-highlight-colour", default="\033[48;2;120;40;15m"
             ),
-            label_colour=ConfigLoader.get_string("@flash-label-colour", default="\033[48;5;142m\033[1m"),
+            label_colour=ConfigLoader.get_string("@flash-label-colour", default="\033[48;2;22;110;22m"),
             prompt_position=ConfigLoader.get_choice(
                 "@flash-prompt-position", choices=["top", "bottom"], default="bottom"
             ),
