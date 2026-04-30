@@ -335,7 +335,7 @@ class InteractiveUI:
                     display_line[coloured_replace_start:], 1, use_cache=False
                 )
                 # Replace that single plain character with the coloured label
-                coloured_label = f"{self.config.label_colour}{match.label}{AnsiStyles.RESET}"
+                coloured_label = f"\033[22m{self.config.label_colour}{match.label}{AnsiStyles.RESET}"
                 display_line = (
                     display_line[:coloured_replace_start]
                     + coloured_label
@@ -344,7 +344,7 @@ class InteractiveUI:
             else:
                 # No character to replace (end of line) — insert label after match
                 coloured_insert_pos = get_coloured_pos(display_line, plain_replace_index)
-                coloured_label = f"{self.config.label_colour}{match.label}{AnsiStyles.RESET}"
+                coloured_label = f"\033[22m{self.config.label_colour}{match.label}{AnsiStyles.RESET}"
                 display_line = (
                     display_line[:coloured_insert_pos]
                     + coloured_label
