@@ -44,7 +44,7 @@ class SearchInterface:
     """Manages search queries and label generation."""
 
     # Default label characters
-    DEFAULT_LABELS = "asdfghjklqwertyuiopzxcvbnmASDFGHJKLQWERTYUIOPZXCVBNM"
+    DEFAULT_LABELS = "srtnaeoigmwfpluycdvkhxzbjq"
 
     # Cache compiled regex patterns
     _pattern_cache: dict[Optional[str], re.Pattern] = {}
