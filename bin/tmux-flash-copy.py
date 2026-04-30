@@ -14,8 +14,8 @@ from pathlib import Path
 PLUGIN_DIR = Path(__file__).parent.parent
 sys.path.insert(0, str(PLUGIN_DIR))
 
-from src.clipboard import Clipboard  # noqa: E402
 from src.config import ConfigLoader  # noqa: E402
+from src.cursor_jump import jump_to  # noqa: E402
 from src.debug_logger import (  # noqa: E402
     DebugLogger,
     draw_pane_layout,
@@ -145,27 +145,20 @@ def main():
             label_characters=config.label_characters,
         )
 
-        # Initialise clipboard helper
-        clipboard = Clipboard()
-
         # Initialise popup UI
         ui = PopupUI(
             pane_content=pane_content,
             search_interface=search,
-            clipboard=clipboard,
             pane_id=pane_id,
             config=config,
         )
 
         # Run the interactive search interface
-        result, should_paste = ui.run()
+        target = ui.run()
 
-        if result:
-            # Copy to clipboard and optionally paste
-            logger = DebugLogger.get_instance() if config.debug_enabled else None
-            clipboard.copy_and_paste(
-                result, pane_id=pane_id, auto_paste=should_paste, logger=logger
-            )
+        if target is not None:
+            line, col = target
+            jump_to(pane_id, line, col)
 
     except KeyboardInterrupt:
         print("\nSearch cancelled", file=sys.stderr)
