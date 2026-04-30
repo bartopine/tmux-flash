@@ -3,7 +3,7 @@
 import subprocess
 from unittest.mock import MagicMock, patch
 
-from src.config import FlashCopyConfig
+from src.config import FlashConfig
 from src.popup_ui import PopupUI
 from src.search_interface import SearchInterface
 
@@ -39,7 +39,7 @@ class TestPopupUIErrorHandling:
 
         mock_subprocess.side_effect = subprocess_side_effect
 
-        config = FlashCopyConfig()
+        config = FlashConfig()
         search_interface = MagicMock(spec=SearchInterface)
         search_interface.reverse_search = True
         search_interface.word_separators = ""
@@ -89,7 +89,7 @@ class TestPopupUIErrorHandling:
 
         mock_subprocess.side_effect = subprocess_side_effect
 
-        config = FlashCopyConfig()
+        config = FlashConfig()
         search_interface = MagicMock(spec=SearchInterface)
         search_interface.reverse_search = True
         search_interface.word_separators = ""
@@ -147,7 +147,7 @@ class TestPopupUIErrorHandling:
 
         mock_subprocess.side_effect = subprocess_side_effect
 
-        config = FlashCopyConfig()
+        config = FlashConfig()
         search_interface = MagicMock(spec=SearchInterface)
         search_interface.reverse_search = True
         search_interface.word_separators = ""
@@ -210,7 +210,7 @@ class TestPopupUIErrorHandling:
 
         mock_subprocess.side_effect = subprocess_side_effect
 
-        config = FlashCopyConfig()
+        config = FlashConfig()
         search_interface = MagicMock(spec=SearchInterface)
         search_interface.reverse_search = True
         search_interface.word_separators = ""
@@ -271,7 +271,7 @@ class TestPopupUIErrorHandling:
 
         mock_subprocess.side_effect = subprocess_side_effect
 
-        config = FlashCopyConfig()
+        config = FlashConfig()
         search_interface = MagicMock(spec=SearchInterface)
         search_interface.reverse_search = True
         search_interface.word_separators = ""

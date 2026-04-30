@@ -2,7 +2,7 @@
 Debug logging module for tmux-flash-copy.
 
 Provides centralized debug logging with automatic rotation and thread-safe writes.
-Only logs when @flash-copy-debug is enabled.
+Only logs when @flash-debug is enabled.
 """
 
 import os

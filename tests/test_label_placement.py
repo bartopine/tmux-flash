@@ -2,7 +2,7 @@ import importlib.util
 from pathlib import Path
 
 from src.ansi_utils import AnsiUtils
-from src.config import FlashCopyConfig
+from src.config import FlashConfig
 
 
 def load_interactive_ui():
@@ -28,7 +28,7 @@ def test_partial_match_replaces_next_character():
     interactive_cls = load_interactive_ui()
 
     pane_content = "hello world\n"
-    config = FlashCopyConfig()
+    config = FlashConfig()
     ui = interactive_cls("pane", pane_content, {}, config)
 
     # Run search for single character 'h'
@@ -58,7 +58,7 @@ def test_whole_word_match_replaces_following_space():
     interactive_cls = load_interactive_ui()
 
     pane_content = "hello world\n"
-    config = FlashCopyConfig()
+    config = FlashConfig()
     ui = interactive_cls("pane", pane_content, {}, config)
 
     matches = ui.search_interface.search("hello")
