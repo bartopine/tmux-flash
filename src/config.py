@@ -16,7 +16,7 @@ class FlashConfig:
     """Configuration for tmux-flash plugin."""
 
     reverse_search: bool = True
-    case_sensitive: bool = False
+    smart_case: str = "on"  # "on" (smart) | "case-sensitive" | "case-insensitive"
     word_separators: Optional[str] = None
     prompt_placeholder_text: str = "search..."
     highlight_colour: str = "\033[1;33m"
@@ -397,7 +397,11 @@ class ConfigLoader:
 
         return FlashConfig(
             reverse_search=ConfigLoader.get_bool("@flash-reverse-search", default=True),
-            case_sensitive=ConfigLoader.get_bool("@flash-case-sensitive", default=False),
+            smart_case=ConfigLoader.get_choice(
+                "@flash-smart-case",
+                choices=["on", "case-sensitive", "case-insensitive"],
+                default="on",
+            ),
             word_separators=ConfigLoader.get_word_separators(),
             prompt_placeholder_text=ConfigLoader.get_string(
                 "@flash-prompt-placeholder-text", default="search..."

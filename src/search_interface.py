@@ -58,12 +58,28 @@ class SearchInterface:
             s = "^" + s[1:].replace("^", "\\^")
         return s
 
+    def _resolve_case_sensitive(self, query: str) -> bool:
+        """Resolve whether the current search should be case-sensitive.
+
+        Args:
+            query: The current search query
+
+        Returns:
+            True if case-sensitive, False if case-insensitive
+        """
+        if self.smart_case == "case-sensitive":
+            return True
+        if self.smart_case == "case-insensitive":
+            return False
+        # "on" — smart-case: sensitive iff query contains any uppercase
+        return any(c.isupper() for c in query)
+
     def __init__(
         self,
         pane_content: str,
         reverse_search: bool = True,
         word_separators: Optional[str] = None,
-        case_sensitive: bool = False,
+        smart_case: str = "on",
         label_characters: Optional[str] = None,
     ):
         """
@@ -75,7 +91,8 @@ class SearchInterface:
             word_separators: String of characters to treat as word boundaries.
                            If None, uses default whitespace + punctuation approach.
                            If provided, words are split on these separator characters.
-            case_sensitive: If True, search is case-sensitive; if False, case-insensitive (default False)
+            smart_case: "on" for smart-case (sensitive iff query has uppercase),
+                        "case-sensitive" to force sensitive, "case-insensitive" to force insensitive
         """
         self.pane_content = pane_content
         self.lines = pane_content.split("\n")
@@ -83,7 +100,7 @@ class SearchInterface:
         self.matches: list[SearchMatch] = []
         self.reverse_search = reverse_search
         self.word_separators = word_separators
-        self.case_sensitive = case_sensitive
+        self.smart_case = smart_case
         # Label characters can be customised per-instance; fall back to class default
         self.label_characters = label_characters if label_characters else self.DEFAULT_LABELS
         self._build_word_index()
@@ -157,8 +174,8 @@ class SearchInterface:
                     col=sequence_start,
                     copy_text=copy_text,
                 )
-                # Use the sequence for indexing (case-sensitive or lowercase)
-                index_key = sequence if self.case_sensitive else sequence.lower()
+                # Always index with lowercase keys; case sensitivity is resolved at search time
+                index_key = sequence.lower()
                 self.word_index[index_key].append(search_match)
 
             pos += len(line) + 1  # +1 for newline
@@ -176,8 +193,11 @@ class SearchInterface:
         Returns:
             List of SearchMatch objects sorted by position
         """
-        # Store the original query, and apply case transformation if needed
-        self.search_query = query if self.case_sensitive else query.lower()
+        # Resolve case sensitivity for this query
+        case_sensitive = self._resolve_case_sensitive(query)
+
+        # Store the query, applying case transformation if needed
+        self.search_query = query if case_sensitive else query.lower()
         matches_list = []
 
         if not query:
@@ -185,7 +205,7 @@ class SearchInterface:
             return []
 
         # Use the query as-is if case-sensitive, or lowercase if case-insensitive
-        search_query = query if self.case_sensitive else query.lower()
+        search_query = query if case_sensitive else query.lower()
 
         # Compile word pattern for extracting copy text
         if self.word_separators:
@@ -195,13 +215,16 @@ class SearchInterface:
             word_pattern = None
 
         # Find all sequences that contain the query
+        # Index keys are always lowercase; for case-sensitive search use lowercase query for lookup
+        # then verify against original text
+        lookup_query = query.lower() if case_sensitive else search_query
         for sequence_key, matches_from_index in self.word_index.items():
-            # Check if this sequence contains the query
-            if search_query in sequence_key:
+            # Check if this sequence (lowercased) contains the query
+            if lookup_query in sequence_key:
                 for sequence_match in matches_from_index:
                     # Find ALL occurrences of the query in this sequence
                     search_text = (
-                        sequence_match.text if self.case_sensitive else sequence_match.text.lower()
+                        sequence_match.text if case_sensitive else sequence_match.text.lower()
                     )
                     match_pos = 0
                     while True:
@@ -290,8 +313,11 @@ class SearchInterface:
         Args:
             matches: List of SearchMatch objects to label
         """
+        # Resolve case sensitivity using the stored search_query
+        case_sensitive = self._resolve_case_sensitive(self.search_query)
+
         # Get characters to exclude from labels based on search query
-        if self.case_sensitive:
+        if case_sensitive:
             query_chars = set(self.search_query)
         else:
             query_chars = set(self.search_query.lower())
@@ -302,7 +328,7 @@ class SearchInterface:
             # Get the character immediately after the matched portion
             if match.match_end < len(match.text):
                 next_char = match.text[match.match_end]
-                if self.case_sensitive:
+                if case_sensitive:
                     continuation_chars.add(next_char)
                 else:
                     continuation_chars.add(next_char.lower())
@@ -313,7 +339,7 @@ class SearchInterface:
         # Assign labels to each match
         for match in matches:
             # Get characters from this specific matched word
-            match_chars = set(match.text) if self.case_sensitive else set(match.text.lower())
+            match_chars = set(match.text) if case_sensitive else set(match.text.lower())
 
             # Find available labels for this match
             available_labels = []
@@ -323,7 +349,7 @@ class SearchInterface:
                 if c in used_labels:
                     continue
                 # Skip if in query, continuation chars, or in this match's text
-                if self.case_sensitive:
+                if case_sensitive:
                     if c in query_chars or c in continuation_chars or c in match_chars:
                         continue
                 else:

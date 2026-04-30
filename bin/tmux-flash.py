@@ -61,7 +61,7 @@ def main():
         pane_content = capture.capture_pane()
 
         # Load all configuration from tmux
-        config = ConfigLoader.load_all_flash_copy_config()
+        config = ConfigLoader.load_all_flash_config()
 
         # Initialize debug logger if enabled
         if config.debug_enabled:
@@ -79,7 +79,7 @@ def main():
             logger.log_dict(
                 {
                     "reverse_search": config.reverse_search,
-                    "case_sensitive": config.case_sensitive,
+                    "smart_case": config.smart_case,
                     "word_separators": repr(config.word_separators)
                     if config.word_separators
                     else "(default)",
@@ -141,7 +141,7 @@ def main():
             pane_content,
             reverse_search=config.reverse_search,
             word_separators=config.word_separators,
-            case_sensitive=config.case_sensitive,
+            smart_case=config.smart_case,
             label_characters=config.label_characters,
         )
 

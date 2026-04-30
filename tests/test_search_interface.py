@@ -47,18 +47,18 @@ class TestSearchInterface:
         assert search.matches == []
         assert search.reverse_search is True
         assert search.word_separators is None
-        assert search.case_sensitive is False
+        assert search.smart_case == "on"
 
     def test_init_with_options(self):
         """Test SearchInterface initialization with custom options."""
         content = "test"
         search = SearchInterface(
-            content, reverse_search=False, word_separators=" -", case_sensitive=True
+            content, reverse_search=False, word_separators=" -", smart_case="case-sensitive"
         )
 
         assert search.reverse_search is False
         assert search.word_separators == " -"
-        assert search.case_sensitive is True
+        assert search.smart_case == "case-sensitive"
 
     def test_word_index_built_on_init(self):
         """Test that word index is built on initialization."""
@@ -117,7 +117,7 @@ class TestSearchInterface:
     def test_search_case_insensitive(self):
         """Test case-insensitive search (default)."""
         content = "Hello HELLO hello"
-        search = SearchInterface(content, case_sensitive=False)
+        search = SearchInterface(content, smart_case="case-insensitive")
 
         matches = search.search("hello")
 
@@ -126,7 +126,7 @@ class TestSearchInterface:
     def test_search_case_sensitive(self):
         """Test case-sensitive search."""
         content = "Hello HELLO hello"
-        search = SearchInterface(content, case_sensitive=True)
+        search = SearchInterface(content, smart_case="case-sensitive")
 
         matches = search.search("hello")
 
@@ -286,7 +286,7 @@ class TestSearchInterface:
     def test_search_preserves_match_text_case(self):
         """Test that match text preserves original case."""
         content = "Hello World"
-        search = SearchInterface(content, case_sensitive=False)
+        search = SearchInterface(content, smart_case="case-insensitive")
 
         matches = search.search("hello")
 
@@ -473,7 +473,7 @@ class TestSearchInterface:
     def test_label_assignment_case_sensitive_continuation(self):
         """Test label assignment with case-sensitive continuation chars."""
         content = "Hello World"
-        search = SearchInterface(content, case_sensitive=True)
+        search = SearchInterface(content, smart_case="case-sensitive")
 
         matches = search.search("H")
 
@@ -482,3 +482,22 @@ class TestSearchInterface:
         # Label should not be 'e' (continuation char after 'H')
         if matches[0].label:
             assert matches[0].label != "e"
+
+
+def test_smart_case_lowercase_query_is_case_insensitive():
+    si = SearchInterface("Hello hello HELLO", smart_case="on")
+    matches = si.search("hello")
+    assert len(matches) == 3
+
+
+def test_smart_case_mixed_query_is_case_sensitive():
+    si = SearchInterface("Hello hello HELLO", smart_case="on")
+    matches = si.search("Hello")
+    assert len(matches) == 1
+
+
+def test_smart_case_force_options_override():
+    si = SearchInterface("Hello hello", smart_case="case-sensitive")
+    assert len(si.search("hello")) == 1
+    si2 = SearchInterface("Hello hello", smart_case="case-insensitive")
+    assert len(si2.search("Hello")) == 2

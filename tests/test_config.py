@@ -12,7 +12,7 @@ class TestFlashConfig:
         """Test default configuration values."""
         config = FlashConfig()
         assert config.reverse_search is True
-        assert config.case_sensitive is False
+        assert config.smart_case == "on"
         assert config.word_separators is None
         assert config.prompt_placeholder_text == "search..."
         assert config.highlight_colour == "\033[1;33m"
@@ -22,11 +22,16 @@ class TestFlashConfig:
         assert config.prompt_colour == "\033[1m"
         assert config.debug_enabled is False
 
+    def test_smart_case_defaults_to_on(self):
+        """Test that smart_case defaults to 'on'."""
+        config = FlashConfig()
+        assert config.smart_case == "on"
+
     def test_custom_values(self):
         """Test configuration with custom values."""
         config = FlashConfig(
             reverse_search=False,
-            case_sensitive=True,
+            smart_case="case-sensitive",
             word_separators=" -",
             prompt_placeholder_text="find...",
             highlight_colour="\033[1;31m",
@@ -37,7 +42,7 @@ class TestFlashConfig:
             debug_enabled=True,
         )
         assert config.reverse_search is False
-        assert config.case_sensitive is True
+        assert config.smart_case == "case-sensitive"
         assert config.word_separators == " -"
         assert config.prompt_placeholder_text == "find..."
         assert config.highlight_colour == "\033[1;31m"
@@ -570,8 +575,8 @@ class TestConfigLoader:
         """Test loading all flash-copy configuration."""
         mock_global_opts.return_value = {}
         mock_window_opts.return_value = {}
-        mock_choice.side_effect = ["bottom"]
-        mock_bool.side_effect = [True, False, False]  # reverse_search, case_sensitive, debug_enabled
+        mock_choice.side_effect = ["on", "bottom"]  # smart_case, prompt_position
+        mock_bool.side_effect = [True, False]  # reverse_search, debug_enabled
         mock_word_sep.return_value = None
         mock_string.side_effect = [
             "search...",
@@ -587,7 +592,7 @@ class TestConfigLoader:
 
         assert isinstance(config, FlashConfig)
         assert config.reverse_search is True
-        assert config.case_sensitive is False
+        assert config.smart_case == "on"
         assert config.word_separators is None
         assert config.prompt_placeholder_text == "search..."
         assert config.highlight_colour == "\033[1;33m"
@@ -619,8 +624,8 @@ class TestConfigLoader:
         """Test loading flash configuration with debug enabled and custom idle settings."""
         mock_global_opts.return_value = {}
         mock_window_opts.return_value = {}
-        mock_choice.side_effect = ["top"]
-        mock_bool.side_effect = [True, True, True]  # reverse_search, case_sensitive, debug_enabled
+        mock_choice.side_effect = ["on", "top"]  # smart_case, prompt_position
+        mock_bool.side_effect = [True, True]  # reverse_search, debug_enabled
         mock_word_sep.return_value = " -"
         mock_string.side_effect = [
             "search...",
