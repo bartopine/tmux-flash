@@ -12,8 +12,8 @@ from typing import Optional
 
 
 @dataclass
-class FlashCopyConfig:
-    """Configuration for tmux-flash-copy plugin."""
+class FlashConfig:
+    """Configuration for tmux-flash plugin."""
 
     reverse_search: bool = True
     case_sensitive: bool = False
@@ -25,7 +25,6 @@ class FlashCopyConfig:
     prompt_indicator: str = ">"
     prompt_colour: str = "\033[1m"
     debug_enabled: bool = False
-    auto_paste_enable: bool = True
     label_characters: Optional[str] = None
     idle_timeout: int = 15
     idle_warning: int = 5
@@ -57,8 +56,8 @@ class ConfigLoader:
             )
             if result.returncode == 0:
                 for line in result.stdout.splitlines():
-                    # Parse lines like: @flash-copy-debug off
-                    # or: @flash-copy-prompt-colour "\033[1m"
+                    # Parse lines like: @flash-debug off
+                    # or: @flash-prompt-colour "\033[1m"
                     if " " in line:
                         parts = line.split(" ", 1)
                         if len(parts) == 2:
@@ -148,7 +147,7 @@ class ConfigLoader:
         Uses cached values if available to reduce subprocess calls.
 
         Args:
-            option_name: The tmux option name (e.g., "@flash-copy-auto-paste")
+            option_name: The tmux option name (e.g., "@flash-debug")
             default: Default value if option doesn't exist or reading fails
 
         Returns:
@@ -309,7 +308,7 @@ class ConfigLoader:
         Get word separators setting, with priority order.
 
         Priority:
-        1. @flash-copy-word-separators (custom user override)
+        1. @flash-word-separators (custom user override)
         2. word-separators window option (tmux built-in)
 
         The word-separators window option value comes as a quoted string and needs
@@ -322,7 +321,7 @@ class ConfigLoader:
             The word separators string, or default (None for use default pattern)
         """
         # First check for custom override
-        custom_separators = ConfigLoader._read_tmux_option("@flash-copy-word-separators", "")
+        custom_separators = ConfigLoader._read_tmux_option("@flash-word-separators", "")
         if custom_separators:
             return custom_separators
 
@@ -363,14 +362,14 @@ class ConfigLoader:
         return output if output else default
 
     @staticmethod
-    def load_all_flash_copy_config() -> FlashCopyConfig:
+    def load_all_flash_config() -> FlashConfig:
         """
         Load all flash-copy related configuration at once.
 
         Useful for loading all config in one place and passing around.
 
         Returns:
-            FlashCopyConfig dataclass with all flash-copy configuration options
+            FlashConfig dataclass with all flash-copy configuration options
         """
         # Batch read all options in single subprocess calls for performance
         ConfigLoader._global_options_cache = ConfigLoader._read_all_global_options()
@@ -396,25 +395,24 @@ class ConfigLoader:
             except (subprocess.SubprocessError, OSError):
                 pass
 
-        return FlashCopyConfig(
-            reverse_search=ConfigLoader.get_bool("@flash-copy-reverse-search", default=True),
-            case_sensitive=ConfigLoader.get_bool("@flash-copy-case-sensitive", default=False),
+        return FlashConfig(
+            reverse_search=ConfigLoader.get_bool("@flash-reverse-search", default=True),
+            case_sensitive=ConfigLoader.get_bool("@flash-case-sensitive", default=False),
             word_separators=ConfigLoader.get_word_separators(),
             prompt_placeholder_text=ConfigLoader.get_string(
-                "@flash-copy-prompt-placeholder-text", default="search..."
+                "@flash-prompt-placeholder-text", default="search..."
             ),
             highlight_colour=ConfigLoader.get_string(
-                "@flash-copy-highlight-colour", default="\033[1;33m"
+                "@flash-highlight-colour", default="\033[1;33m"
             ),
-            label_colour=ConfigLoader.get_string("@flash-copy-label-colour", default="\033[1;32m"),
+            label_colour=ConfigLoader.get_string("@flash-label-colour", default="\033[1;32m"),
             prompt_position=ConfigLoader.get_choice(
-                "@flash-copy-prompt-position", choices=["top", "bottom"], default="bottom"
+                "@flash-prompt-position", choices=["top", "bottom"], default="bottom"
             ),
-            prompt_indicator=ConfigLoader.get_string("@flash-copy-prompt-indicator", default=">"),
-            prompt_colour=ConfigLoader.get_string("@flash-copy-prompt-colour", default="\033[1m"),
-            debug_enabled=ConfigLoader.get_bool("@flash-copy-debug", default=False),
-            auto_paste_enable=ConfigLoader.get_bool("@flash-copy-auto-paste", default=True),
-            label_characters=ConfigLoader.get_optional_string("@flash-copy-label-characters"),
-            idle_timeout=ConfigLoader.get_int("@flash-copy-idle-timeout", default=15),
-            idle_warning=ConfigLoader.get_int("@flash-copy-idle-warning", default=5),
+            prompt_indicator=ConfigLoader.get_string("@flash-prompt-indicator", default=">"),
+            prompt_colour=ConfigLoader.get_string("@flash-prompt-colour", default="\033[1m"),
+            debug_enabled=ConfigLoader.get_bool("@flash-debug", default=False),
+            label_characters=ConfigLoader.get_optional_string("@flash-label-characters"),
+            idle_timeout=ConfigLoader.get_int("@flash-idle-timeout", default=15),
+            idle_warning=ConfigLoader.get_int("@flash-idle-warning", default=5),
         )

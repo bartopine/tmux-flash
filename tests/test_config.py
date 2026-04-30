@@ -2,15 +2,15 @@
 
 from unittest.mock import MagicMock, patch
 
-from src.config import ConfigLoader, FlashCopyConfig
+from src.config import ConfigLoader, FlashConfig
 
 
-class TestFlashCopyConfig:
-    """Test FlashCopyConfig dataclass."""
+class TestFlashConfig:
+    """Test FlashConfig dataclass."""
 
     def test_default_values(self):
         """Test default configuration values."""
-        config = FlashCopyConfig()
+        config = FlashConfig()
         assert config.reverse_search is True
         assert config.case_sensitive is False
         assert config.word_separators is None
@@ -21,11 +21,10 @@ class TestFlashCopyConfig:
         assert config.prompt_indicator == ">"
         assert config.prompt_colour == "\033[1m"
         assert config.debug_enabled is False
-        assert config.auto_paste_enable is True
 
     def test_custom_values(self):
         """Test configuration with custom values."""
-        config = FlashCopyConfig(
+        config = FlashConfig(
             reverse_search=False,
             case_sensitive=True,
             word_separators=" -",
@@ -36,7 +35,6 @@ class TestFlashCopyConfig:
             prompt_indicator=">>",
             prompt_colour="\033[1;36m",
             debug_enabled=True,
-            auto_paste_enable=False,
         )
         assert config.reverse_search is False
         assert config.case_sensitive is True
@@ -48,7 +46,6 @@ class TestFlashCopyConfig:
         assert config.prompt_indicator == ">>"
         assert config.prompt_colour == "\033[1;36m"
         assert config.debug_enabled is True
-        assert config.auto_paste_enable is False
 
 
 class TestConfigLoader:
@@ -59,15 +56,15 @@ class TestConfigLoader:
         """Test batch reading all global options."""
         mock_result = MagicMock()
         mock_result.returncode = 0
-        mock_result.stdout = '@flash-copy-debug off\n@flash-copy-prompt-colour "\\033[1m"\n'
+        mock_result.stdout = '@flash-debug off\n@flash-prompt-colour "\\033[1m"\n'
         mock_run.return_value = mock_result
 
         result = ConfigLoader._read_all_global_options()
 
-        assert "@flash-copy-debug" in result
-        assert result["@flash-copy-debug"] == "off"
-        assert "@flash-copy-prompt-colour" in result
-        assert result["@flash-copy-prompt-colour"] == "\033[1m"
+        assert "@flash-debug" in result
+        assert result["@flash-debug"] == "off"
+        assert "@flash-prompt-colour" in result
+        assert result["@flash-prompt-colour"] == "\033[1m"
 
     @patch("subprocess.run")
     def test_read_all_global_options_failure(self, mock_run):
@@ -95,14 +92,14 @@ class TestConfigLoader:
         mock_result = MagicMock()
         mock_result.returncode = 0
         # Invalid escape sequence that can't be decoded by ast.literal_eval
-        mock_result.stdout = r'@flash-copy-test "\x{invalid}"' + "\n"
+        mock_result.stdout = r'@flash-test "\x{invalid}"' + "\n"
         mock_run.return_value = mock_result
 
         result = ConfigLoader._read_all_global_options()
 
         # Should fall back to just stripping quotes
-        assert "@flash-copy-test" in result
-        assert result["@flash-copy-test"] == r"\x{invalid}"
+        assert "@flash-test" in result
+        assert result["@flash-test"] == r"\x{invalid}"
 
     @patch("subprocess.run")
     def test_read_all_window_options_success(self, mock_run):
@@ -412,7 +409,7 @@ class TestConfigLoader:
         result = ConfigLoader.get_word_separators()
 
         assert result == " -_"
-        mock_read.assert_called_once_with("@flash-copy-word-separators", "")
+        mock_read.assert_called_once_with("@flash-word-separators", "")
 
     @patch("src.config.ConfigLoader._read_tmux_window_option")
     @patch("src.config.ConfigLoader._read_tmux_option")
@@ -534,8 +531,8 @@ class TestConfigLoader:
         assert result == " -_"
 
     @patch("subprocess.run")
-    def test_load_all_flash_copy_config_word_sep_subprocess_error(self, mock_run):
-        """Test load_all_flash_copy_config handles subprocess error when reading word-separators."""
+    def test_load_all_flash_config_word_sep_subprocess_error(self, mock_run):
+        """Test load_all_flash_config handles subprocess error when reading word-separators."""
         # First two calls succeed (global and window options)
         # Third call fails (word-separators individual read)
         mock_result_success = MagicMock()
@@ -549,7 +546,7 @@ class TestConfigLoader:
         ]
 
         # Should not raise, should use default
-        config = ConfigLoader.load_all_flash_copy_config()
+        config = ConfigLoader.load_all_flash_config()
 
         assert config is not None
 
@@ -560,7 +557,7 @@ class TestConfigLoader:
     @patch("src.config.ConfigLoader.get_bool")
     @patch("src.config.ConfigLoader.get_string")
     @patch("src.config.ConfigLoader.get_word_separators")
-    def test_load_all_flash_copy_config(
+    def test_load_all_flash_config(
         self,
         mock_word_sep,
         mock_string,
@@ -574,7 +571,7 @@ class TestConfigLoader:
         mock_global_opts.return_value = {}
         mock_window_opts.return_value = {}
         mock_choice.side_effect = ["bottom"]
-        mock_bool.side_effect = [True, False, False, True]  # auto_paste_enable defaults to True
+        mock_bool.side_effect = [True, False, False]  # reverse_search, case_sensitive, debug_enabled
         mock_word_sep.return_value = None
         mock_string.side_effect = [
             "search...",
@@ -586,9 +583,9 @@ class TestConfigLoader:
         ]
         mock_int.side_effect = [15, 5]  # idle_timeout, idle_warning
 
-        config = ConfigLoader.load_all_flash_copy_config()
+        config = ConfigLoader.load_all_flash_config()
 
-        assert isinstance(config, FlashCopyConfig)
+        assert isinstance(config, FlashConfig)
         assert config.reverse_search is True
         assert config.case_sensitive is False
         assert config.word_separators is None
@@ -599,7 +596,6 @@ class TestConfigLoader:
         assert config.prompt_indicator == ">"
         assert config.prompt_colour == "\033[1m"
         assert config.debug_enabled is False
-        assert config.auto_paste_enable is True
         assert config.idle_timeout == 15
         assert config.idle_warning == 5
 
@@ -610,7 +606,7 @@ class TestConfigLoader:
     @patch("src.config.ConfigLoader.get_bool")
     @patch("src.config.ConfigLoader.get_string")
     @patch("src.config.ConfigLoader.get_word_separators")
-    def test_load_all_flash_copy_config_auto_paste_disabled(
+    def test_load_all_flash_config_debug_enabled(
         self,
         mock_word_sep,
         mock_string,
@@ -620,11 +616,11 @@ class TestConfigLoader:
         mock_global_opts,
         mock_window_opts,
     ):
-        """Test loading flash-copy configuration with auto-paste disabled."""
+        """Test loading flash configuration with debug enabled and custom idle settings."""
         mock_global_opts.return_value = {}
         mock_window_opts.return_value = {}
         mock_choice.side_effect = ["top"]
-        mock_bool.side_effect = [True, True, True, False]  # auto_paste_enable is False
+        mock_bool.side_effect = [True, True, True]  # reverse_search, case_sensitive, debug_enabled
         mock_word_sep.return_value = " -"
         mock_string.side_effect = [
             "search...",
@@ -636,8 +632,8 @@ class TestConfigLoader:
         ]
         mock_int.side_effect = [30, 10]  # custom idle_timeout, idle_warning
 
-        config = ConfigLoader.load_all_flash_copy_config()
+        config = ConfigLoader.load_all_flash_config()
 
-        assert config.auto_paste_enable is False
+        assert config.debug_enabled is True
         assert config.idle_timeout == 30
         assert config.idle_warning == 10

@@ -27,13 +27,13 @@ DEFAULT_IDLE_TIMEOUT_SECONDS = interactive_module.DEFAULT_IDLE_TIMEOUT_SECONDS
 DEFAULT_IDLE_WARNING_SECONDS = interactive_module.DEFAULT_IDLE_WARNING_SECONDS
 InteractiveUI = interactive_module.InteractiveUI
 
-from src.config import FlashCopyConfig  # noqa: E402
+from src.config import FlashConfig  # noqa: E402
 
 
 @pytest.fixture
 def mock_config():
-    """Create a mock FlashCopyConfig for testing."""
-    config = MagicMock(spec=FlashCopyConfig)
+    """Create a mock FlashConfig for testing."""
+    config = MagicMock(spec=FlashConfig)
     config.reverse_search = False
     config.case_sensitive = False
     config.word_separators = " "
@@ -45,7 +45,6 @@ def mock_config():
     config.prompt_indicator = ">"
     config.prompt_colour = "\033[1m"
     config.debug_enabled = False
-    config.auto_paste_enable = False
     config.idle_timeout = 15
     config.idle_warning = 5
     return config
