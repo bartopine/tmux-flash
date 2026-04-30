@@ -35,7 +35,7 @@ def mock_config():
     """Create a mock FlashConfig for testing."""
     config = MagicMock(spec=FlashConfig)
     config.reverse_search = False
-    config.case_sensitive = False
+    config.smart_case = "case-insensitive"
     config.word_separators = " "
     config.label_characters = "asdfghjkl"
     config.prompt_placeholder_text = "search..."

@@ -24,12 +24,12 @@ PLUGIN_DIR = Path(__file__).parent.parent
 sys.path.insert(0, str(PLUGIN_DIR))
 
 from src.ansi_utils import AnsiStyles, AnsiUtils, ControlChars, TerminalSequences  # noqa: E402
-from src.config import ConfigLoader, FlashCopyConfig  # noqa: E402
+from src.config import ConfigLoader, FlashConfig  # noqa: E402
 from src.debug_logger import DebugLogger  # noqa: E402
 from src.pane_capture import PaneCapture  # noqa: E402
 from src.search_interface import SearchInterface  # noqa: E402
 
-# Idle timeout defaults (configurable via @flash-copy-idle-timeout and @flash-copy-idle-warning)
+# Idle timeout defaults (configurable via @flash-idle-timeout and @flash-idle-warning)
 # These are kept as constants for backwards compatibility and fallback
 DEFAULT_IDLE_TIMEOUT_SECONDS = 15
 DEFAULT_IDLE_WARNING_SECONDS = 5
@@ -43,7 +43,7 @@ class InteractiveUI:
         pane_id: str,
         pane_content: str,
         dimensions: dict,
-        config: FlashCopyConfig,
+        config: FlashConfig,
     ):
         """
         Initialise the interactive UI.
@@ -52,7 +52,7 @@ class InteractiveUI:
             pane_id: The tmux pane ID
             pane_content: The captured pane content
             dimensions: Pane dimensions dict
-            config: FlashCopyConfig with all configuration options
+            config: FlashConfig with all configuration options
         """
         self.pane_id = pane_id
         self.pane_content = pane_content
@@ -65,7 +65,7 @@ class InteractiveUI:
             self.pane_content_plain,
             reverse_search=config.reverse_search,
             word_separators=config.word_separators,
-            case_sensitive=config.case_sensitive,
+            smart_case=config.smart_case,
             label_characters=config.label_characters,
         )
         self.search_query = ""
@@ -677,7 +677,7 @@ def main():
         "--reverse-search", default="True", help="Enable reverse search (bottom to top)"
     )
     parser.add_argument("--word-separators", default="", help="Word separator characters")
-    parser.add_argument("--case-sensitive", default="False", help="Enable case-sensitive search")
+    parser.add_argument("--smart-case", default="on", help="Smart-case mode: on, case-sensitive, or case-insensitive")
     parser.add_argument(
         "--prompt-placeholder-text", default="search...", help="Ghost text for empty prompt input"
     )
@@ -736,10 +736,10 @@ def main():
         # Get pane dimensions
         dimensions = capture.get_pane_dimensions()
 
-        # Reconstruct FlashCopyConfig from command line arguments
-        config = FlashCopyConfig(
+        # Reconstruct FlashConfig from command line arguments
+        config = FlashConfig(
             reverse_search=ConfigLoader.parse_bool(args.reverse_search),
-            case_sensitive=ConfigLoader.parse_bool(args.case_sensitive),
+            smart_case=args.smart_case,
             word_separators=args.word_separators if args.word_separators else None,
             prompt_placeholder_text=args.prompt_placeholder_text,
             highlight_colour=args.highlight_colour,

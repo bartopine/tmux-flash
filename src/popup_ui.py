@@ -10,7 +10,7 @@ import subprocess
 from pathlib import Path
 from typing import Optional
 
-from src.config import FlashCopyConfig
+from src.config import FlashConfig
 from src.debug_logger import DebugLogger
 from src.search_interface import SearchInterface, SearchMatch
 from src.utils import TmuxPaneUtils
@@ -24,7 +24,7 @@ class PopupUI:
         pane_content: str,
         search_interface: SearchInterface,
         pane_id: str,
-        config: FlashCopyConfig,
+        config: FlashConfig,
     ):
         """
         Initialise the popup UI.
@@ -33,7 +33,7 @@ class PopupUI:
             pane_content: The captured pane content
             search_interface: SearchInterface instance for searching
             pane_id: The tmux pane ID
-            config: FlashCopyConfig with all configuration options
+            config: FlashConfig with all configuration options
         """
         self.pane_content = pane_content
         self.search_interface = search_interface
@@ -132,8 +132,8 @@ class PopupUI:
             str(self.search_interface.reverse_search),
             "--word-separators",
             self.search_interface.word_separators or "",
-            "--case-sensitive",
-            str(self.config.case_sensitive),
+            "--smart-case",
+            self.config.smart_case,
             "--prompt-placeholder-text",
             self.config.prompt_placeholder_text,
             "--highlight-colour",
