@@ -18,22 +18,26 @@ def jump_to(pane_id: str, line: int, col: int) -> None:
     # Enter copy-mode (no-op if already in copy-mode).
     subprocess.run(["tmux", "copy-mode", "-t", pane_id], check=False)
 
-    # Anchor: move cursor to top-left of the visible viewport.
+    # Anchor: move cursor to top of the visible viewport.
     subprocess.run(
         ["tmux", "send-keys", "-X", "-t", pane_id, "top-line"],
         check=False,
     )
-    subprocess.run(
-        ["tmux", "send-keys", "-X", "-t", pane_id, "start-of-line"],
-        check=False,
-    )
 
-    # Walk down `line` physical viewport rows, then right `col` columns.
+    # Walk down `line` physical viewport rows. cursor-down may not preserve
+    # column (tmux can snap to end-of-line for short lines), so we re-anchor
+    # column with start-of-line AFTER moving down.
     if line > 0:
         subprocess.run(
             ["tmux", "send-keys", "-X", "-N", str(line), "-t", pane_id, "cursor-down"],
             check=False,
         )
+
+    subprocess.run(
+        ["tmux", "send-keys", "-X", "-t", pane_id, "start-of-line"],
+        check=False,
+    )
+
     if col > 0:
         subprocess.run(
             ["tmux", "send-keys", "-X", "-N", str(col), "-t", pane_id, "cursor-right"],

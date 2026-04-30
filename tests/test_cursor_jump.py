@@ -85,7 +85,7 @@ class TestJumpTo:
 
     @patch("src.cursor_jump.subprocess.run")
     def test_jump_call_order_is_anchor_then_walk(self, mock_run: MagicMock):
-        """Order matters: copy-mode first, then top-line/start-of-line, then walk."""
+        """Order: copy-mode, top-line, cursor-down (row), start-of-line (re-anchor col), cursor-right."""
         cursor_jump.jump_to("%9", 2, 3)
         argvs = [_argv(c) for c in mock_run.call_args_list]
 
@@ -97,7 +97,7 @@ class TestJumpTo:
 
         i_copy = index_of(["tmux", "copy-mode", "-t", "%9"])
         i_top = index_of(["tmux", "send-keys", "-X", "-t", "%9", "top-line"])
-        i_sol = index_of(["tmux", "send-keys", "-X", "-t", "%9", "start-of-line"])
         i_down = index_of(["tmux", "send-keys", "-X", "-N", "2", "-t", "%9", "cursor-down"])
+        i_sol = index_of(["tmux", "send-keys", "-X", "-t", "%9", "start-of-line"])
         i_right = index_of(["tmux", "send-keys", "-X", "-N", "3", "-t", "%9", "cursor-right"])
-        assert i_copy < i_top < i_sol < i_down < i_right
+        assert i_copy < i_top < i_down < i_sol < i_right
