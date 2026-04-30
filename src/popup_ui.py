@@ -10,7 +10,6 @@ import subprocess
 from pathlib import Path
 from typing import Optional
 
-from src.clipboard import Clipboard
 from src.config import FlashCopyConfig
 from src.debug_logger import DebugLogger
 from src.search_interface import SearchInterface, SearchMatch
@@ -24,7 +23,6 @@ class PopupUI:
         self,
         pane_content: str,
         search_interface: SearchInterface,
-        clipboard: Clipboard,
         pane_id: str,
         config: FlashCopyConfig,
     ):
@@ -34,13 +32,11 @@ class PopupUI:
         Args:
             pane_content: The captured pane content
             search_interface: SearchInterface instance for searching
-            clipboard: Clipboard instance for copying
             pane_id: The tmux pane ID
             config: FlashCopyConfig with all configuration options
         """
         self.pane_content = pane_content
         self.search_interface = search_interface
-        self.clipboard = clipboard
         self.pane_id = pane_id
         self.config = config
         self.search_query = ""
@@ -156,8 +152,6 @@ class PopupUI:
             DebugLogger.get_instance().log_file if self.config.debug_enabled else "",
             "--label-characters",
             self.config.label_characters or "",
-            "--auto-paste",
-            "true" if self.config.auto_paste_enable else "false",
             "--idle-timeout",
             str(self.config.idle_timeout),
             "--idle-warning",
