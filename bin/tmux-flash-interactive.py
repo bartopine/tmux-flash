@@ -677,7 +677,11 @@ def main():
         "--reverse-search", default="True", help="Enable reverse search (bottom to top)"
     )
     parser.add_argument("--word-separators", default="", help="Word separator characters")
-    parser.add_argument("--smart-case", default="on", help="Smart-case mode: on, case-sensitive, or case-insensitive")
+    parser.add_argument(
+        "--smart-case",
+        default="on",
+        help="Smart-case mode: on, case-sensitive, or case-insensitive",
+    )
     parser.add_argument(
         "--prompt-placeholder-text", default="search...", help="Ghost text for empty prompt input"
     )

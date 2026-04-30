@@ -317,10 +317,7 @@ class SearchInterface:
         case_sensitive = self._resolve_case_sensitive(self.search_query)
 
         # Get characters to exclude from labels based on search query
-        if case_sensitive:
-            query_chars = set(self.search_query)
-        else:
-            query_chars = set(self.search_query.lower())
+        query_chars = set(self.search_query) if case_sensitive else set(self.search_query.lower())
 
         # Collect characters that appear immediately after matches (continuation chars)
         continuation_chars = set()
