@@ -13,9 +13,9 @@ PLUGIN_DIR = Path(__file__).parent.parent
 sys.path.insert(0, str(PLUGIN_DIR))
 
 # Load the interactive script as a module
-interactive_script_path = PLUGIN_DIR / "bin" / "tmux-flash-copy-interactive.py"
+interactive_script_path = PLUGIN_DIR / "bin" / "tmux-flash-interactive.py"
 spec = importlib.util.spec_from_file_location(
-    "tmux_flash_copy_interactive", interactive_script_path
+    "tmux_flash_interactive", interactive_script_path
 )
 if spec is None or spec.loader is None:
     raise ImportError("Failed to load interactive script")

@@ -94,13 +94,13 @@ class PopupUI:
         # Create a command that will be executed in the popup
         # We'll use a custom Python script for better control
         plugin_dir = Path(__file__).parent.parent
-        interactive_script = plugin_dir / "bin" / "tmux-flash-copy-interactive.py"
+        interactive_script = plugin_dir / "bin" / "tmux-flash-interactive.py"
 
         # Write pane content to tmux buffer for child process to read
         # This avoids redundant pane capture in the interactive script
         # If buffer write fails, child will fall back to capturing pane
         # Use pane_id in buffer name to avoid conflicts with concurrent instances
-        pane_content_buffer = f"__tmux_flash_copy_pane_content_{self.pane_id}__"
+        pane_content_buffer = f"__tmux_flash_pane_content_{self.pane_id}__"
         with contextlib.suppress(subprocess.SubprocessError, OSError):
             subprocess.run(
                 ["tmux", "set-buffer", "-b", pane_content_buffer, self.pane_content],
@@ -175,7 +175,7 @@ class PopupUI:
 
             # Read result from tmux buffer (written by child process)
             # Using pane-specific buffer names to avoid conflicts
-            result_buffer = f"__tmux_flash_copy_result_{self.pane_id}__"
+            result_buffer = f"__tmux_flash_result_{self.pane_id}__"
             try:
                 if logger.enabled:
                     logger.log("Reading result from tmux buffer...")
@@ -260,7 +260,7 @@ class PopupUI:
         the copy-mode cursor.
         """
         payload = f"{match.line}:{match.col}"
-        result_buffer = f"__tmux_flash_copy_result_{self.pane_id}__"
+        result_buffer = f"__tmux_flash_result_{self.pane_id}__"
         subprocess.run(
             ["tmux", "set-buffer", "-b", result_buffer, payload],
             check=False,

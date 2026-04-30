@@ -645,7 +645,7 @@ class InteractiveUI:
 
         # Store result in a tmux buffer for parent to read
         # Use pane-specific buffer name to avoid conflicts with concurrent instances
-        result_buffer = f"__tmux_flash_copy_result_{self.pane_id}__"
+        result_buffer = f"__tmux_flash_result_{self.pane_id}__"
         payload = f"{match.line}:{match.col}" if match is not None else ""
         try:
             if logger.enabled:
@@ -714,7 +714,7 @@ def main():
         # Try to read pane content from buffer first (optimization to avoid redundant capture)
         # Use pane-specific buffer name to avoid conflicts with concurrent instances
         pane_content = None
-        pane_content_buffer = f"__tmux_flash_copy_pane_content_{args.pane_id}__"
+        pane_content_buffer = f"__tmux_flash_pane_content_{args.pane_id}__"
         try:
             buffer_result = subprocess.run(
                 ["tmux", "show-buffer", "-b", pane_content_buffer],

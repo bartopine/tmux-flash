@@ -6,7 +6,7 @@ from src.config import FlashCopyConfig
 
 
 def load_interactive_ui():
-    script_path = Path(__file__).resolve().parents[1] / "bin" / "tmux-flash-copy-interactive.py"
+    script_path = Path(__file__).resolve().parents[1] / "bin" / "tmux-flash-interactive.py"
     spec = importlib.util.spec_from_file_location("interactive_ui", str(script_path))
     # spec may be None according to the type checker; guard so mypy/ty know it's present
     if spec is None or spec.loader is None:

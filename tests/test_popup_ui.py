@@ -166,7 +166,7 @@ class TestPopupUIErrorHandling:
         assert result is None
         # Should log the failure with pane-specific buffer name
         mock_logger.log.assert_any_call(
-            "Buffer read FAILED: Command '['tmux', 'show-buffer', '-b', '__tmux_flash_copy_result_test_pane__']' returned non-zero exit status 1."
+            "Buffer read FAILED: Command '['tmux', 'show-buffer', '-b', '__tmux_flash_result_test_pane__']' returned non-zero exit status 1."
         )
 
     @patch("src.popup_ui.subprocess.run")

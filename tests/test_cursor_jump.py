@@ -40,11 +40,25 @@ class TestJumpTo:
         assert ["tmux", "send-keys", "-X", "-t", "%2", "top-line"] in argvs
         # Walk down 3 rows in a single send-keys -N invocation:
         assert [
-            "tmux", "send-keys", "-X", "-N", "3", "-t", "%2", "cursor-down",
+            "tmux",
+            "send-keys",
+            "-X",
+            "-N",
+            "3",
+            "-t",
+            "%2",
+            "cursor-down",
         ] in argvs
         # Walk right 7 cols:
         assert [
-            "tmux", "send-keys", "-X", "-N", "7", "-t", "%2", "cursor-right",
+            "tmux",
+            "send-keys",
+            "-X",
+            "-N",
+            "7",
+            "-t",
+            "%2",
+            "cursor-right",
         ] in argvs
 
     @patch("src.cursor_jump.subprocess.run")
@@ -84,10 +98,6 @@ class TestJumpTo:
         i_copy = index_of(["tmux", "copy-mode", "-t", "%9"])
         i_top = index_of(["tmux", "send-keys", "-X", "-t", "%9", "top-line"])
         i_sol = index_of(["tmux", "send-keys", "-X", "-t", "%9", "start-of-line"])
-        i_down = index_of(
-            ["tmux", "send-keys", "-X", "-N", "2", "-t", "%9", "cursor-down"]
-        )
-        i_right = index_of(
-            ["tmux", "send-keys", "-X", "-N", "3", "-t", "%9", "cursor-right"]
-        )
+        i_down = index_of(["tmux", "send-keys", "-X", "-N", "2", "-t", "%9", "cursor-down"])
+        i_right = index_of(["tmux", "send-keys", "-X", "-N", "3", "-t", "%9", "cursor-right"])
         assert i_copy < i_top < i_sol < i_down < i_right
