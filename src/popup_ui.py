@@ -257,3 +257,16 @@ class PopupUI:
                 check=False,
             )
             return (None, False)
+
+    def _save_match_position(self, match) -> None:
+        """Write 'line:col' for the chosen match into the tmux result buffer.
+
+        This is the IPC payload consumed by the parent launcher to position
+        the copy-mode cursor.
+        """
+        payload = f"{match.line}:{match.col}"
+        result_buffer = f"__tmux_flash_copy_result_{self.pane_id}__"
+        subprocess.run(
+            ["tmux", "set-buffer", "-b", result_buffer, payload],
+            check=False,
+        )
