@@ -179,12 +179,6 @@ class InteractiveUI:
         sys.stderr.write(TerminalSequences.CLEAR_SCREEN)
         sys.stderr.flush()
 
-    def _reset_terminal(self):
-        """Reset terminal state (scrolling region, etc.)."""
-        # Reset scrolling region to full screen (ANSI: \033[r)
-        sys.stderr.write("\033[r")
-        sys.stderr.flush()
-
     def _dim_coloured_line(self, line: str) -> str:
         """Apply dimming to a line with ANSI colour codes.
 
@@ -335,7 +329,9 @@ class InteractiveUI:
                     display_line[coloured_replace_start:], 1, use_cache=False
                 )
                 # Replace that single plain character with the coloured label
-                coloured_label = f"\033[22m{self.config.label_colour}{match.label}{AnsiStyles.RESET}"
+                coloured_label = (
+                    f"\033[22m{self.config.label_colour}{match.label}{AnsiStyles.RESET}"
+                )
                 display_line = (
                     display_line[:coloured_replace_start]
                     + coloured_label
@@ -344,7 +340,9 @@ class InteractiveUI:
             else:
                 # No character to replace (end of line) — insert label after match
                 coloured_insert_pos = get_coloured_pos(display_line, plain_replace_index)
-                coloured_label = f"\033[22m{self.config.label_colour}{match.label}{AnsiStyles.RESET}"
+                coloured_label = (
+                    f"\033[22m{self.config.label_colour}{match.label}{AnsiStyles.RESET}"
+                )
                 display_line = (
                     display_line[:coloured_insert_pos]
                     + coloured_label
@@ -364,7 +362,9 @@ class InteractiveUI:
             # here; we've already inserted/replaced it above)
             before_match = display_line[:coloured_match_start]
             after_matched = display_line[coloured_match_end:]
-            highlighted = f"\033[22m{self.config.highlight_colour}{plain_matched_part}{AnsiStyles.RESET}"
+            highlighted = (
+                f"\033[22m{self.config.highlight_colour}{plain_matched_part}{AnsiStyles.RESET}"
+            )
             display_line = before_match + highlighted + after_matched
 
         return display_line
@@ -420,92 +420,50 @@ class InteractiveUI:
         """Display the pane content with visual distinction for matches."""
         self._clear_screen()
 
-        # Create a version of the content with labels overlayed
         # Strip trailing newline to avoid empty line at end (tmux capture-pane adds one)
         lines = self.pane_content.rstrip("\n").split("\n")
         lines_plain = self.pane_content_plain.rstrip("\n").split("\n")
 
-        # Get popup dimensions first
+        # Get popup dimensions
         try:
             popup_height = shutil.get_terminal_size().lines
         except OSError:
             popup_height = 40
 
-        # Calculate available height for content
-        # Reserve 1 line at bottom for search bar, and exclude the last captured line
-        # (which is the user's shell prompt that we want to replace with our search bar)
-        available_height = popup_height - 1
+        # Render all lines up to popup_height (fills the popup identically to the pane)
+        available_height = popup_height
 
-        # Remove the last line (user's prompt) so search bar replaces it
-        if len(lines) > 0:
-            lines = lines[:-1]
-            lines_plain = lines_plain[:-1]
-
-        # Trim lines array to exactly available_height
-        # This ensures we display exactly the right number of lines
+        # Trim lines to fit popup
         if len(lines) > available_height:
             lines = lines[:available_height]
             lines_plain = lines_plain[:available_height]
 
-        # If search bar is at the top, display it first
-        if self.config.prompt_position == "top":
-            search_output = self._build_search_bar_output()
-            sys.stderr.write(search_output)
-            sys.stderr.write("\n")
-
-            # Set scrolling region to protect only the prompt (line 1)
-            # Line 1 = prompt, Lines 2+ = scrollable content
-            sys.stderr.write(f"\033[2;{popup_height}r")
-            # Position cursor at start of scrollable region (line 2, column 1)
-            sys.stderr.write("\033[2;1H")
-
-            sys.stderr.flush()
-
-        # If search bar is at the bottom, set up scrolling region first
-        if self.config.prompt_position == "bottom":
-            # Protect only bottom line (search bar)
-            scrollable_bottom = popup_height - 1
-
-            sys.stderr.write(f"\033[1;{scrollable_bottom}r")
-            # Position cursor at start of scrollable region (line 1, column 1)
-            sys.stderr.write("\033[1;1H")
-            sys.stderr.flush()
-
-        # Display pane content (limit to available height)
+        # Display all pane content lines
         self._display_pane_content(lines, lines_plain, available_height)
 
-        # Position cursor at search input if search bar is at top
+        # Build the search bar
+        search_output = self._build_search_bar_output()
+
         if self.config.prompt_position == "top":
-            # Move cursor to line 1 (search bar), column after prompt indicator
-            cursor_col = len(self.config.prompt_indicator) + 2
-            # Calculate position after the search query text
-            if self.search_query:
-                cursor_col += len(self.search_query)
-            # ANSI escape: \033[{row};{col}H positions cursor at row, col (1-indexed)
-            sys.stderr.write(f"\033[1;{cursor_col}H")
-            sys.stderr.flush()
-
-        # If search bar is at the bottom, render it in the protected area
-        if self.config.prompt_position == "bottom":
-            # Flush any pending output first
-            sys.stderr.flush()
-
-            search_output = self._build_search_bar_output()
-
-            # Position search bar at last line
-            search_bar_line = popup_height
-            sys.stderr.write(f"\033[{search_bar_line};1H")
-            # Write search bar
+            # Overwrite line 1 with search bar
+            sys.stderr.write("\033[1;1H")
             sys.stderr.write(search_output)
-
-            # Position cursor after the prompt and search query (on the left side)
-            # Calculate the visible cursor position (ignore ANSI codes and right-aligned debug text)
+            # Position cursor after prompt + query
             cursor_col = len(self.config.prompt_indicator) + 2
             if self.search_query:
                 cursor_col += len(self.search_query)
-            sys.stderr.write(f"\033[{cursor_col}G")
+            sys.stderr.write(f"\033[1;{cursor_col}H")
+        else:
+            # Overwrite last line with search bar
+            sys.stderr.write(f"\033[{popup_height};1H")
+            sys.stderr.write(search_output)
+            # Position cursor after prompt + query on that line
+            cursor_col = len(self.config.prompt_indicator) + 2
+            if self.search_query:
+                cursor_col += len(self.search_query)
+            sys.stderr.write(f"\033[{popup_height};{cursor_col}H")
 
-            sys.stderr.flush()
+        sys.stderr.flush()
 
     def run(self) -> Optional[str]:
         """
@@ -630,9 +588,6 @@ class InteractiveUI:
             self._save_result()  # Write empty result to signal completion
             return None
         finally:
-            # Reset terminal state (scrolling region)
-            self._reset_terminal()
-            # Clean up terminal
             self._clear_screen()
 
     def _save_result(self, match=None):
@@ -686,9 +641,13 @@ def main():
         "--prompt-placeholder-text", default="search...", help="Ghost text for empty prompt input"
     )
     parser.add_argument(
-        "--highlight-colour", default="\033[48;2;120;40;15m", help="ANSI colour for highlighted text"
+        "--highlight-colour",
+        default="\033[48;2;120;40;15m",
+        help="ANSI colour for highlighted text",
     )
-    parser.add_argument("--label-colour", default="\033[48;2;22;110;22m", help="ANSI colour for labels")
+    parser.add_argument(
+        "--label-colour", default="\033[48;2;22;110;22m", help="ANSI colour for labels"
+    )
     parser.add_argument(
         "--prompt-position", default="bottom", help="Position of prompt (top or bottom)"
     )
