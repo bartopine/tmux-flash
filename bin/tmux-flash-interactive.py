@@ -393,7 +393,7 @@ class InteractiveUI:
                 # Dim the line if there are search results but none on this line
                 output = self._dim_coloured_line(line)
 
-                # Skip newline on last line to prevent blank line before search bar
+                # Skip newline on last line: a trailing \n would scroll the terminal, shifting the row targeted by subsequent absolute cursor moves
                 if is_last_line:
                     sys.stderr.write(output)
                     sys.stderr.flush()  # Flush immediately after last line
@@ -408,7 +408,7 @@ class InteractiveUI:
             # plain characters (e.g. to detect a following space to overwrite).
             display_line = self._display_line_with_matches(dimmed_line, line_idx, line_plain)
 
-            # Skip newline on last line to prevent blank line before search bar
+            # Skip newline on last line: a trailing \n would scroll the terminal, shifting the row targeted by subsequent absolute cursor moves
             if is_last_line:
                 sys.stderr.write(display_line)
                 sys.stderr.flush()  # Flush immediately after last line
@@ -430,7 +430,7 @@ class InteractiveUI:
         except OSError:
             popup_height = 40
 
-        # Render all lines up to popup_height (fills the popup identically to the pane)
+        # Render all popup_height lines; the search bar overwrites one (first or last)
         available_height = popup_height
 
         # Trim lines to fit popup
@@ -449,16 +449,16 @@ class InteractiveUI:
             sys.stderr.write("\033[1;1H")
             sys.stderr.write(search_output)
             # Position cursor after prompt + query
-            cursor_col = len(self.config.prompt_indicator) + 2
+            cursor_col = AnsiUtils.get_visible_length(self.config.prompt_indicator) + 2
             if self.search_query:
                 cursor_col += len(self.search_query)
             sys.stderr.write(f"\033[1;{cursor_col}H")
         else:
-            # Overwrite last line with search bar
+            # default "bottom": overwrite last line with search bar
             sys.stderr.write(f"\033[{popup_height};1H")
             sys.stderr.write(search_output)
             # Position cursor after prompt + query on that line
-            cursor_col = len(self.config.prompt_indicator) + 2
+            cursor_col = AnsiUtils.get_visible_length(self.config.prompt_indicator) + 2
             if self.search_query:
                 cursor_col += len(self.search_query)
             sys.stderr.write(f"\033[{popup_height};{cursor_col}H")
@@ -588,6 +588,7 @@ class InteractiveUI:
             self._save_result()  # Write empty result to signal completion
             return None
         finally:
+            # No _reset_terminal() call needed: no scrolling region is set, so a plain clear suffices
             self._clear_screen()
 
     def _save_result(self, match=None):

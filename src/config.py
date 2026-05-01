@@ -409,7 +409,9 @@ class ConfigLoader:
             highlight_colour=ConfigLoader.get_string(
                 "@flash-highlight-colour", default="\033[48;2;120;40;15m"
             ),
-            label_colour=ConfigLoader.get_string("@flash-label-colour", default="\033[48;2;22;110;22m"),
+            label_colour=ConfigLoader.get_string(
+                "@flash-label-colour", default="\033[48;2;22;110;22m"
+            ),
             prompt_position=ConfigLoader.get_choice(
                 "@flash-prompt-position", choices=["top", "bottom"], default="bottom"
             ),
