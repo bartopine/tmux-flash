@@ -195,8 +195,9 @@ class TestTmuxPaneUtils:
 
         assert result is None
 
-    def test_calculate_popup_position_top_pane(self):
-        """Test calculate_popup_position for pane at top (top=0)."""
+    @patch.object(TmuxPaneUtils, "_get_client_height", return_value=40)
+    def test_calculate_popup_position_uses_client_height(self, _mock):
+        """Test popup uses y=0 and client_height for full coverage."""
         dimensions = PaneDimensions(
             pane_id="%0",
             left=0,
@@ -211,13 +212,14 @@ class TestTmuxPaneUtils:
 
         assert result == {
             "x": 0,
-            "y": 0,  # For top panes, y = top
+            "y": 0,
             "width": 80,
-            "height": 24,
+            "height": 40,
         }
 
-    def test_calculate_popup_position_non_top_pane(self):
-        """Test calculate_popup_position for pane not at top (top>0)."""
+    @patch.object(TmuxPaneUtils, "_get_client_height", return_value=33)
+    def test_calculate_popup_position_with_offset_pane(self, _mock):
+        """Test popup still uses y=0 regardless of pane position."""
         dimensions = PaneDimensions(
             pane_id="%1",
             left=40,
@@ -232,13 +234,14 @@ class TestTmuxPaneUtils:
 
         assert result == {
             "x": 40,
-            "y": 36,  # For non-top panes, y = bottom + 1
+            "y": 0,
             "width": 80,
-            "height": 24,
+            "height": 33,
         }
 
-    def test_calculate_popup_position_left_offset_pane(self):
-        """Test calculate_popup_position for pane with left offset."""
+    @patch.object(TmuxPaneUtils, "_get_client_height", return_value=0)
+    def test_calculate_popup_position_fallback(self, _mock):
+        """Test fallback to pane height when client_height unavailable."""
         dimensions = PaneDimensions(
             pane_id="%2",
             left=20,
@@ -256,25 +259,4 @@ class TestTmuxPaneUtils:
             "y": 0,
             "width": 80,
             "height": 24,
-        }
-
-    def test_calculate_popup_position_small_pane(self):
-        """Test calculate_popup_position for small pane."""
-        dimensions = PaneDimensions(
-            pane_id="%3",
-            left=10,
-            top=5,
-            right=29,
-            bottom=14,
-            width=20,
-            height=10,
-        )
-
-        result = TmuxPaneUtils.calculate_popup_position(dimensions)
-
-        assert result == {
-            "x": 10,
-            "y": 15,  # bottom + 1
-            "width": 20,
-            "height": 10,
         }

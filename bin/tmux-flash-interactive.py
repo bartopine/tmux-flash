@@ -175,7 +175,10 @@ class InteractiveUI:
         return ControlChars.ESC
 
     def _clear_screen(self):
-        """Clear the terminal screen."""
+        """Clear the terminal screen and disable line wrapping."""
+        # Disable line wrapping so long lines are clipped at terminal edge
+        # instead of wrapping to the next row (which would shift content down)
+        sys.stderr.write("\033[?7l")
         sys.stderr.write(TerminalSequences.CLEAR_SCREEN)
         sys.stderr.flush()
 
@@ -420,9 +423,9 @@ class InteractiveUI:
         """Display the pane content with visual distinction for matches."""
         self._clear_screen()
 
-        # Strip trailing newline to avoid empty line at end (tmux capture-pane adds one)
-        lines = self.pane_content.rstrip("\n").split("\n")
-        lines_plain = self.pane_content_plain.rstrip("\n").split("\n")
+        # Offset content down by 2 rows to compensate for full-width lines
+        # in the pane content causing terminal deferred-wrap scroll.
+        sys.stderr.write("\n\n")
 
         # Get popup dimensions
         try:
@@ -430,15 +433,31 @@ class InteractiveUI:
         except OSError:
             popup_height = 40
 
-        # Render all popup_height lines; the search bar overwrites one (first or last)
-        available_height = popup_height
+        # Split on newlines, removing only the single trailing newline that
+        # tmux capture-pane always appends (preserve interior blank lines)
+        content = self.pane_content[:-1] if self.pane_content.endswith("\n") else self.pane_content
+        content_plain = (
+            self.pane_content_plain[:-1]
+            if self.pane_content_plain.endswith("\n")
+            else self.pane_content_plain
+        )
+        lines = content.split("\n")
+        lines_plain = content_plain.split("\n")
 
-        # Trim lines to fit popup
+        # Account for 2-line offset and search bar row
+        available_height = popup_height - 3
+
+        # Trim to available height
         if len(lines) > available_height:
             lines = lines[:available_height]
             lines_plain = lines_plain[:available_height]
 
-        # Display all pane content lines
+        # Pad if content is shorter than available space
+        while len(lines) < available_height:
+            lines.append("")
+            lines_plain.append("")
+
+        # Display content lines
         self._display_pane_content(lines, lines_plain, available_height)
 
         # Build the search bar
@@ -454,7 +473,7 @@ class InteractiveUI:
                 cursor_col += len(self.search_query)
             sys.stderr.write(f"\033[1;{cursor_col}H")
         else:
-            # default "bottom": overwrite last line with search bar
+            # default "bottom": search bar on the last row
             sys.stderr.write(f"\033[{popup_height};1H")
             sys.stderr.write(search_output)
             # Position cursor after prompt + query on that line
@@ -567,13 +586,12 @@ class InteractiveUI:
                         self._save_result(self.current_matches[0])
                         return self.current_matches[0].copy_text
                 elif char.isprintable():
-                    # Check if this character is a label for current matches
-                    # But only if we already have a non-empty search query
-                    # (to avoid matching labels on the first character typed)
+                    # Check if this character is a label for current matches.
+                    # Label selection takes priority — the user types until they
+                    # see their target, then presses the label to jump.
                     if self.current_matches and self.search_query:
                         match = self.search_interface.get_match_by_label(char)
                         if match:
-                            # Label pressed - save result and exit
                             if self.debug_logger and self.debug_logger.enabled:
                                 self.debug_logger.log(
                                     f"User selected label '{char}': '{match.text}'"
@@ -588,7 +606,6 @@ class InteractiveUI:
             self._save_result()  # Write empty result to signal completion
             return None
         finally:
-            # No _reset_terminal() call needed: no scrolling region is set, so a plain clear suffices
             self._clear_screen()
 
     def _save_result(self, match=None):

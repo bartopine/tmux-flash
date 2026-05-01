@@ -157,15 +157,28 @@ class TmuxPaneUtils:
             return None
 
     @staticmethod
+    def _get_client_height() -> int:
+        """Get the tmux client height (full terminal including status bar)."""
+        try:
+            result = subprocess.run(
+                ["tmux", "display-message", "-p", "#{client_height}"],
+                capture_output=True,
+                text=True,
+                check=True,
+                timeout=2,
+            )
+            return int(result.stdout.strip())
+        except (subprocess.SubprocessError, ValueError, OSError):
+            return 0
+
+    @staticmethod
     def calculate_popup_position(dimensions: PaneDimensions) -> dict:
         """
         Calculate the popup positioning parameters to seamlessly overlay a pane.
 
-        Based on tmux popup coordinate behavior:
-        - For panes at the top (top=0): y = pane_top
-        - For other panes: y = pane_bottom + 1 (to account for the border above the pane)
-        - x always = pane_left
-        - width and height match the pane dimensions
+        The popup covers the full client area (y=0, height=client_height).
+        Content alignment and search bar positioning are handled by the
+        interactive script's rendering logic.
 
         Args:
             dimensions: PaneDimensions object with pane info
@@ -173,13 +186,11 @@ class TmuxPaneUtils:
         Returns:
             Dictionary with keys 'x', 'y', 'width', 'height' for popup positioning
         """
-        # Determine y position based on whether pane is at the top
-        # For non-top panes, add 1 to account for the border above the pane
-        y_position = dimensions.top if dimensions.top == 0 else dimensions.bottom + 1
+        client_height = TmuxPaneUtils._get_client_height()
 
         return {
             "x": dimensions.left,
-            "y": y_position,
+            "y": 0,
             "width": dimensions.width,
-            "height": dimensions.height,
+            "height": client_height if client_height > 0 else dimensions.height,
         }
