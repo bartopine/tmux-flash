@@ -7,6 +7,8 @@ and handling user input for label selection.
 """
 
 import argparse
+import codecs
+import contextlib
 import math
 import os
 import select
@@ -70,6 +72,7 @@ class InteractiveUI:
         )
         self.search_query = ""
         self.current_matches = []
+        self._stdin_decoder = codecs.getincrementaldecoder("utf-8")(errors="replace")
         # Timeout tracking
         self.start_time: float = 0.0
         self.timeout_warning_shown = False
@@ -120,47 +123,34 @@ class InteractiveUI:
         Uses select() with a short timeout to avoid blocking, allowing the main loop
         to check for idle timeout periodically.
 
+        The terminal is put into cbreak mode once for the whole session (see
+        run()) rather than toggled per keystroke: re-entering raw mode with
+        tcsetattr(TCSAFLUSH) discards pending input, so keys typed while a
+        render was in progress were dropped (and echoed at the cursor position,
+        scattering stray letters over the screen).
+
         Returns:
             The character or special value read, empty string if no input available
         """
         try:
             fd = sys.stdin.fileno()
-
-            # Check if stdin is a TTY before attempting to set raw mode
-            if not os.isatty(fd):
-                # If not a TTY (e.g., in a tmux popup), use select and read directly
-                readable, _, _ = select.select([sys.stdin], [], [], 0.1)
-                if not readable:
-                    return ""
-                char = sys.stdin.read(1)
-                if not char:  # EOF
-                    return ControlChars.CTRL_C  # Treat EOF as Ctrl+C
-                # Check for escape sequences
-                if char == ControlChars.ESC:
-                    return self._handle_escape_sequence()
-                return char
-
-            # For TTY, set raw mode first, then use select
-            old_settings = termios.tcgetattr(fd)
-            try:
-                tty.setraw(fd)
-                # Use select to check if input is available (0.1 second timeout)
-                # This allows us to return to the main loop to check idle timeout
-                readable, _, _ = select.select([fd], [], [], 0.1)
-
-                if not readable:
-                    # No input available, return empty string to continue loop
-                    return ""
-
-                char = sys.stdin.read(1)
-                if not char:  # EOF
-                    return ControlChars.CTRL_C  # Treat EOF as Ctrl+C
-                # Check for escape sequences
-                if char == ControlChars.ESC:
-                    return self._handle_escape_sequence()
-                return char
-            finally:
-                termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+            readable, _, _ = select.select([fd], [], [], 0.1)
+            if not readable:
+                return ""
+            # Read one byte unbuffered: buffered sys.stdin.read(1) would slurp
+            # every pending byte into Python's internal buffer, leaving the OS
+            # queue empty so the next select() never fires for those keys.
+            data = os.read(fd, 1)
+            if not data:  # EOF
+                return ControlChars.CTRL_C  # Treat EOF as Ctrl+C
+            char = self._stdin_decoder.decode(data)
+            if not char:
+                # Mid multi-byte UTF-8 sequence; next read completes it
+                return ""
+            # Check for escape sequences
+            if char == ControlChars.ESC:
+                return self._handle_escape_sequence()
+            return char
         except Exception as e:
             print(f"Error reading input: {e}", file=sys.stderr)
             return ControlChars.CTRL_C  # Treat any error as Ctrl+C
@@ -491,6 +481,19 @@ class InteractiveUI:
         Returns:
             The selected text if a match was chosen, None if cancelled
         """
+        # Enter cbreak mode once for the whole session: no echo, char-at-a-time
+        # reads, but output processing stays on so newlines render normally.
+        # Pending input survives between reads, so fast typing is never dropped.
+        old_settings = None
+        fd = None
+        try:
+            fd = sys.stdin.fileno()
+            if os.isatty(fd):
+                old_settings = termios.tcgetattr(fd)
+                tty.setcbreak(fd)
+        except (OSError, termios.error):
+            old_settings = None
+
         try:
             # Track start time for idle timeout
             self.start_time = time.time()
@@ -606,6 +609,9 @@ class InteractiveUI:
             self._save_result()  # Write empty result to signal completion
             return None
         finally:
+            if old_settings is not None and fd is not None:
+                with contextlib.suppress(termios.error):
+                    termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
             self._clear_screen()
 
     def _save_result(self, match=None):
